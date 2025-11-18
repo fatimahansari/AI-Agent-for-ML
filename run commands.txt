@@ -1,0 +1,59 @@
+================================================================================
+COMPLETE SEQUENTIAL WORKFLOW - Run these commands in order
+================================================================================
+
+STEP 1: Generate Metadata from Dataset
+----------------------------------------
+python -m src.main generate-metadata examples/AAPL.csv ^
+  --output examples/AAPL_metadata.json ^
+  --target "Close_forcast" ^
+  --problem-type regression ^
+  --domain finance ^
+  --metric rmse
+
+STEP 2: Train Models (Complete Pipeline - Does Everything)
+------------------------------------------------------------
+This command automatically:
+- Gets model recommendations from LLM
+- Prompts you to select 1-3 models interactively
+- Generates Python code for selected models
+- Trains and evaluates models with train/test split
+- Displays evaluation metrics
+
+python -m src.main train-models examples/AAPL_metadata.json examples/AAPL.csv ^
+  --context "Need near-real-time scoring within a REST API" ^
+  --test-size 0.2 ^
+  --min-models 1 ^
+  --max-models 3 ^
+  --code-dir generated_code
+
+================================================================================
+ALTERNATIVE: Step-by-Step (If you want to see recommendations first)
+================================================================================
+
+STEP 1: Generate Metadata
+python -m src.main generate-metadata examples/AAPL.csv --output examples/AAPL_metadata.json
+
+STEP 2: Get Recommendations Only (Optional - for exploration)
+python -m src.main recommend examples/AAPL_metadata.json ^
+  --context "Need near-real-time scoring within a REST API"
+
+STEP 3: Train Models
+python -m src.main train-models examples/AAPL_metadata.json examples/AAPL.csv ^
+  --context "Need near-real-time scoring within a REST API" ^
+  --test-size 0.2
+
+================================================================================
+QUICK REFERENCE
+================================================================================
+
+Generate metadata:
+python -m src.main generate-metadata <dataset.csv> [options]
+
+Get recommendations only:
+python -m src.main recommend <metadata.json> [--context "..."]
+
+Train models (complete pipeline):
+python -m src.main train-models <metadata.json> <dataset.csv> [options]
+
+See WORKFLOW_GUIDE.md for detailed documentation.
