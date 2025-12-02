@@ -13,6 +13,7 @@ from rich.markdown import Markdown
 from src.metadata_generator import generate_metadata_from_file
 from src.model_recommender import DatasetMetadata, ModelRecommenderAgent
 from src.pipeline_executor import PipelineExecutor
+from src.report_converter import convert_report_to_metadata
 
 app = typer.Typer(help="ML Model Recommender Agent - Get model recommendations and generate validation code")
 console = Console()
@@ -69,20 +70,32 @@ def generate_metadata(
 
 @app.command()
 def recommend(
-    metadata_path: Path = typer.Argument(..., help="Path to metadata JSON file"),
+    report_path: Path = typer.Argument(..., help="Path to Pre Processing Agent report JSON file (e.g., Housing.json)"),
     context: Optional[str] = typer.Option(None, "-c", "--context", help="Extra context for recommendations"),
     context_file: Optional[Path] = typer.Option(None, "--context-file", help="Path to file containing extra context"),
+    domain: Optional[str] = typer.Option(None, "--domain", help="Domain context (e.g., finance, real-estate)"),
+    metric: Optional[str] = typer.Option(None, "--metric", help="Evaluation metric (e.g., accuracy, rmse)"),
 ):
-    """Get model recommendations from LLM based on dataset metadata."""
-    console.print(f"\n[bold blue]Loading metadata from: {metadata_path}[/bold blue]")
+    """Get model recommendations from LLM based on Pre Processing Agent report."""
+    console.print(f"\n[bold blue]Loading report from: {report_path}[/bold blue]")
     
-    # Load metadata
+    # Verify report exists
+    if not report_path.exists():
+        console.print(f"[bold red]Error: Report file not found: {report_path}[/bold red]")
+        console.print(f"[yellow]Hint: Run Pre Processing Agent first to generate the report[/yellow]")
+        raise typer.Exit(1)
+    
+    # Convert Pre Processing Agent report to DatasetMetadata
     try:
-        with open(metadata_path, "r") as f:
-            metadata_dict = json.load(f)
-        metadata = DatasetMetadata(**metadata_dict)
+        metadata = convert_report_to_metadata(
+            report_path=report_path,
+            dataset_name=report_path.stem,
+            domain=domain,
+            evaluation_metric=metric,
+        )
+        console.print(f"[green]✓ Report loaded and converted to metadata[/green]")
     except Exception as e:
-        console.print(f"[bold red]Error loading metadata:[/bold red] {e}")
+        console.print(f"[bold red]Error converting report to metadata:[/bold red] {e}")
         raise typer.Exit(1)
     
     # Load context from file if provided
@@ -106,7 +119,7 @@ def recommend(
 
 @app.command("train-models")
 def train_models(
-    metadata_path: Path = typer.Argument(..., help="Path to metadata JSON file"),
+    report_path: Path = typer.Argument(..., help="Path to Pre Processing Agent report JSON file (e.g., Housing.json)"),
     dataset_path: Path = typer.Argument(..., help="Path to dataset file (CSV, Parquet, or JSON)"),
     context: Optional[str] = typer.Option(None, "-c", "--context", help="Extra context for recommendations"),
     context_file: Optional[Path] = typer.Option(None, "--context-file", help="Path to file containing extra context"),
@@ -114,19 +127,41 @@ def train_models(
     min_models: int = typer.Option(1, "--min-models", help="Minimum number of models to select (default: 1)"),
     max_models: int = typer.Option(3, "--max-models", help="Maximum number of models to select (default: 3)"),
     code_dir: Path = typer.Option(Path("generated_code"), "--code-dir", help="Directory to save generated code (default: generated_code)"),
+    domain: Optional[str] = typer.Option(None, "--domain", help="Domain context (e.g., finance, real-estate)"),
+    metric: Optional[str] = typer.Option(None, "--metric", help="Evaluation metric (e.g., accuracy, rmse)"),
 ):
-    """Complete pipeline: recommendations -> model selection -> code generation -> training & evaluation."""
+    """Complete pipeline: recommendations -> model selection -> code generation -> training & evaluation.
+    
+    Uses Pre Processing Agent report directly - no need to generate separate metadata.
+    """
     console.print(f"\n[bold blue]Starting complete pipeline...[/bold blue]")
-    console.print(f"  Metadata: {metadata_path}")
+    console.print(f"  Report: {report_path}")
     console.print(f"  Dataset: {dataset_path}")
     
-    # Load metadata
+    # Verify report exists
+    if not report_path.exists():
+        console.print(f"[bold red]Error: Report file not found: {report_path}[/bold red]")
+        console.print(f"[yellow]Hint: Run Pre Processing Agent first to generate the report[/yellow]")
+        raise typer.Exit(1)
+    
+    # Convert Pre Processing Agent report to DatasetMetadata
     try:
-        with open(metadata_path, "r") as f:
-            metadata_dict = json.load(f)
-        metadata = DatasetMetadata(**metadata_dict)
+        metadata = convert_report_to_metadata(
+            report_path=report_path,
+            dataset_name=report_path.stem,
+            domain=domain,
+            evaluation_metric=metric,
+        )
+        console.print(f"[green]✓ Report loaded and converted to metadata[/green]")
+        console.print(f"  Dataset: {metadata.name}")
+        console.print(f"  Problem type: {metadata.problem_type}")
+        console.print(f"  Target: {metadata.target}")
+        console.print(f"  Samples: {metadata.num_samples:,}")
+        console.print(f"  Features: {metadata.num_features}")
     except Exception as e:
-        console.print(f"[bold red]Error loading metadata:[/bold red] {e}")
+        console.print(f"[bold red]Error converting report to metadata:[/bold red] {e}")
+        import traceback
+        traceback.print_exc()
         raise typer.Exit(1)
     
     # Load context from file if provided

@@ -131,9 +131,11 @@ class PipelineExecutor:
             test_size=test_size,
         )
         
-        # Save validation code
+        # Save validation code with dataset name
         code_dir.mkdir(parents=True, exist_ok=True)
-        validation_file = code_dir / "validate_models.py"
+        # Extract dataset name from path (e.g., "Housing.csv" -> "Housing")
+        dataset_name = dataset_path.stem
+        validation_file = code_dir / f"{dataset_name}_validate_models.py"
         with open(validation_file, "w", encoding="utf-8") as f:
             f.write(validation_code)
         console.print(f"[green]✓ Validation code saved to {validation_file}[/green]")
@@ -490,9 +492,11 @@ class PipelineExecutor:
             model_name=clean_model_name,
         )
         
-        # Save deployment code
+        # Save deployment code with dataset name
         code_dir.mkdir(parents=True, exist_ok=True)
-        deployment_file = code_dir / "deploy_best_model.py"
+        # Extract dataset name from path (e.g., "Housing.csv" -> "Housing")
+        dataset_name = dataset_path.stem
+        deployment_file = code_dir / f"{dataset_name}_deploy_best_model.py"
         with open(deployment_file, "w", encoding="utf-8") as f:
             f.write(deployment_code)
         console.print(f"[green]✓ Deployment code saved to {deployment_file}[/green]")

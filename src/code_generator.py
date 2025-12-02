@@ -792,7 +792,10 @@ def main():
             else:
                 model_class_ref = class_name
             
-            safe_model_name = model_name.lower().replace(' ', '_').replace('-', '_')
+            # Sanitize model name for Python variable name (remove all special chars)
+            safe_model_name = re.sub(r'[^\w\s-]', '', model_name.lower())  # Remove special chars except spaces and hyphens
+            safe_model_name = re.sub(r'[-\s]+', '_', safe_model_name)  # Replace spaces and hyphens with underscore
+            safe_model_name = safe_model_name.strip('_')  # Remove leading/trailing underscores
             
             code += f'''
         # Validate {model_name} with 80-20 split
