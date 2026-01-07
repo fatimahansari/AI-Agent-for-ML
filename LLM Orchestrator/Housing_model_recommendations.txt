@@ -1,0 +1,10 @@
+The task is regression because the target variable, "price," is numeric. Based on the dataset context and report, here are three appropriate ML models for this regression task:
+
+Model 1: Linear Regression  
+Reason: Linear Regression is a fundamental model for regression tasks that can provide a baseline performance. Given the dataset's small size (545 rows) and the presence of both numerical and categorical features, it offers simplicity and interpretability. It can help understand linear relationships between house features and price.
+
+Model 2: Random Forest Regressor  
+Reason: The Random Forest Regressor is suitable for handling datasets with a mix of numeric and categorical variables, as well as those with skewed distributions and outliers. Its ensemble nature helps in capturing complex interactions among features, which can be beneficial given the high correlation of certain features like "area" and "bathrooms" with the target.
+
+Model 3: Gradient Boosting Regressor  
+Reason: Gradient Boosting is effective for regression tasks involving datasets with skewed distributions and outliers. It builds models sequentially to correct errors from previous ones, which can improve prediction accuracy on complex datasets. This model can handle the skewness in features like "area" and "bathrooms," as well as the high outlier fraction in "stories."
